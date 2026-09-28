@@ -1,0 +1,54 @@
+model_list:
+  - model_name: test-router
+    litellm_params:
+      model: openai/gpt-4o
+      mock_response: "Hello from LiteLLM Docker load balancer deployment A"
+    model_info:
+      description: "Mock Deployment A"
+
+  - model_name: test-router
+    litellm_params:
+      model: openai/gpt-4o
+      mock_response: "Hello from LiteLLM Docker load balancer deployment B"
+    model_info:
+      description: "Mock Deployment B"
+
+  - model_name: production-gpt
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+      rpm: 500
+      tpm: 100000
+    model_info:
+      description: "Primary OpenAI deployment"
+
+  - model_name: production-gpt
+    litellm_params:
+      model: azure/gpt-4o
+      api_base: os.environ/AZURE_API_BASE
+      api_key: os.environ/AZURE_API_KEY
+      api_version: "2024-02-01"
+      rpm: 500
+      tpm: 100000
+    model_info:
+      description: "Secondary Azure deployment"
+
+  - model_name: fallback-claude
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+    model_info:
+      description: "Anthropic Claude fallback deployment"
+
+router_settings:
+  routing_strategy: least-busy
+  model_group_alias:
+    gpt-4o: production-gpt
+  fallbacks:
+    - production-gpt: ["fallback-claude"]
+  num_retries: 3
+  cooldown_time: 30
+  allowed_fails: 2
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
